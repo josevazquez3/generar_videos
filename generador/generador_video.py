@@ -71,6 +71,16 @@ class GeneradorVideo:
                 
                 clip = self._crear_clip_foto(foto, width, height)
                 clips.append(clip)
+
+            # Agregar carátula final (si existe) después de las fotos
+            try:
+                caratula_final = getattr(proyecto, 'caratula_final', None) or proyecto.caratula
+                if caratula_final:
+                    self._reportar_progreso("Creando carátula final", 70)
+                    clip_final = self._crear_caratula(caratula_final, width, height)
+                    clips.append(clip_final)
+            except Exception as e:
+                print(f"Advertencia: no se pudo crear carátula final: {e}")
             
             # Agregar videos si existen
             if proyecto.videos:

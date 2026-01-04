@@ -142,6 +142,7 @@ class VistaPrincipal:
         
         self.crear_pestana_fotos()
         self.crear_pestana_caratula()
+        self.crear_pestana_caratula_final()
         self.crear_pestana_musica()
         self.crear_pestana_videos()
         self.crear_pestana_configuracion()
@@ -1152,3 +1153,547 @@ Provincia de Buenos Aires
 
 © 2026 - Todos los derechos reservados"""
         messagebox.showinfo("Acerca de Video Maker", mensaje)
+
+    # --- Carátula Final: duplicado de carátula principal pero con sufijo _final ---
+    def crear_pestana_caratula_final(self):
+        """Crea la pestaña de configuración de la carátula final"""
+        frame_caratula = ttk.Frame(self.notebook)
+        self.notebook.add(frame_caratula, text="📋 Carátula Final")
+
+        # Contenedor principal
+        container = ttk.Frame(frame_caratula)
+        container.pack(fill=tk.BOTH, expand=True)
+
+        # Panel izquierdo - Controles con scroll
+        left = ttk.Frame(container, width=500)
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Panel derecho - Vista previa
+        right = ttk.Frame(container, width=600)
+        right.pack(side=tk.RIGHT, fill=tk.BOTH, padx=10, pady=10)
+        right.pack_propagate(False)
+
+        # Scroll en panel izquierdo
+        canvas = tk.Canvas(left)
+        scrollbar = ttk.Scrollbar(left, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Campos de carátula final (se reutilizan nombres con sufijo _final)
+        self.crear_campos_caratula_final(scrollable_frame)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Vista previa en panel derecho
+        ttk.Label(right, text="Vista Previa Carátula Final", 
+                 style='Title.TLabel').pack(pady=5)
+        
+        self.canvas_caratula_final_preview = tk.Canvas(right, width=560, height=420, 
+                                                bd=2, relief=tk.SUNKEN, bg='#ffffff')
+        self.canvas_caratula_final_preview.pack(pady=10)
+        
+        # Botón para vista previa en ventana grande
+        ttk.Button(right, text="🔍 Vista Previa Grande", 
+                  command=self._show_caratula_final_preview_window).pack(pady=5)
+
+    def crear_campos_caratula_final(self, parent):
+        """Crea los campos de edición de la carátula final"""
+        # Similar a crear_campos_caratula pero con sufijos _final
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Título (Final):").pack(anchor=tk.W)
+        self.entry_titulo_caratula_final = ttk.Entry(frame, font=('Arial', 12))
+        self.entry_titulo_caratula_final.pack(fill=tk.X, pady=2)
+        self.entry_titulo_caratula_final.bind('<KeyRelease>', lambda e: self._update_caratula_final_preview())
+
+        # Controles de fuente para título
+        frame_font = ttk.Frame(parent)
+        frame_font.pack(fill=tk.X, padx=10, pady=2)
+        ttk.Label(frame_font, text="Estilo Título (Final):").pack(anchor=tk.W)
+        
+        sub = ttk.Frame(frame_font)
+        sub.pack(fill=tk.X)
+        
+        self.combo_titulo_family_final = ttk.Combobox(sub, values=['Arial','Helvetica','Times New Roman',
+                                                              'Courier New','Verdana'], 
+                                               width=16, state='readonly')
+        self.combo_titulo_family_final.pack(side=tk.LEFT)
+        self.combo_titulo_family_final.set('Arial')
+        self.combo_titulo_family_final.bind('<<ComboboxSelected>>', lambda e: self._update_caratula_final_preview())
+        
+        self.spin_titulo_size_final = ttk.Spinbox(sub, from_=8, to=72, width=5)
+        self.spin_titulo_size_final.pack(side=tk.LEFT, padx=6)
+        self.spin_titulo_size_final.set(48)
+        self.spin_titulo_size_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        self.var_titulo_bold_final = tk.IntVar()
+        self.var_titulo_italic_final = tk.IntVar()
+        
+        ttk.Checkbutton(sub, text='Negrita', variable=self.var_titulo_bold_final, 
+                       command=self._update_caratula_final_preview).pack(side=tk.LEFT, padx=6)
+        ttk.Checkbutton(sub, text='Cursiva', variable=self.var_titulo_italic_final, 
+                       command=self._update_caratula_final_preview).pack(side=tk.LEFT, padx=6)
+
+        # Subtítulo
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Subtítulo (Final):").pack(anchor=tk.W)
+        self.entry_subtitulo_caratula_final = ttk.Entry(frame, font=('Arial', 10))
+        self.entry_subtitulo_caratula_final.pack(fill=tk.X, pady=2)
+        self.entry_subtitulo_caratula_final.bind('<KeyRelease>', lambda e: self._update_caratula_final_preview())
+
+        # Controles de fuente para subtítulo
+        frame_font_sub = ttk.Frame(parent)
+        frame_font_sub.pack(fill=tk.X, padx=10, pady=2)
+        ttk.Label(frame_font_sub, text="Estilo Subtítulo (Final):").pack(anchor=tk.W)
+        
+        sub2 = ttk.Frame(frame_font_sub)
+        sub2.pack(fill=tk.X)
+        
+        self.combo_subtitulo_family_final = ttk.Combobox(sub2, values=['Arial','Helvetica','Times New Roman',
+                                                                  'Courier New','Verdana'], 
+                                                  width=16, state='readonly')
+        self.combo_subtitulo_family_final.pack(side=tk.LEFT)
+        self.combo_subtitulo_family_final.set('Arial')
+        self.combo_subtitulo_family_final.bind('<<ComboboxSelected>>', lambda e: self._update_caratula_final_preview())
+        
+        self.spin_subtitulo_size_final = ttk.Spinbox(sub2, from_=8, to=72, width=5)
+        self.spin_subtitulo_size_final.pack(side=tk.LEFT, padx=6)
+        self.spin_subtitulo_size_final.set(24)
+        self.spin_subtitulo_size_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        self.var_subtitulo_bold_final = tk.IntVar()
+        self.var_subtitulo_italic_final = tk.IntVar()
+        
+        ttk.Checkbutton(sub2, text='Negrita', variable=self.var_subtitulo_bold_final, 
+                       command=self._update_caratula_final_preview).pack(side=tk.LEFT, padx=6)
+        ttk.Checkbutton(sub2, text='Cursiva', variable=self.var_subtitulo_italic_final, 
+                       command=self._update_caratula_final_preview).pack(side=tk.LEFT, padx=6)
+
+        # Color de fondo
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Color de Fondo (Final):").pack(anchor=tk.W)
+        frame_color = ttk.Frame(frame)
+        frame_color.pack(fill=tk.X)
+        
+        self.entry_color_fondo_final = ttk.Entry(frame_color, width=10)
+        self.entry_color_fondo_final.pack(side=tk.LEFT, pady=2)
+        self.entry_color_fondo_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        self.btn_color_fondo_final = tk.Button(frame_color, text="🎨", width=3, 
+                                         command=self.elegir_color_fondo_final)
+        self.btn_color_fondo_final.pack(side=tk.LEFT, padx=5)
+        
+        self.preview_color_fondo_final = tk.Canvas(frame_color, width=34, height=20, 
+                                            bd=0, highlightthickness=1, relief=tk.SUNKEN)
+        self.preview_color_fondo_final.create_rectangle(1, 1, 33, 19, fill="#000080", 
+                                                  outline="#888888", tags=('preview',))
+        self.preview_color_fondo_final.pack(side=tk.LEFT, padx=5, pady=2)
+
+        # Color de título
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Color del Título (Final):").pack(anchor=tk.W)
+        frame_color = ttk.Frame(frame)
+        frame_color.pack(fill=tk.X)
+        
+        self.entry_color_titulo_final = ttk.Entry(frame_color, width=10)
+        self.entry_color_titulo_final.pack(side=tk.LEFT, pady=2)
+        self.entry_color_titulo_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        self.btn_color_titulo_final = tk.Button(frame_color, text="🎨", width=3, 
+                                          command=self.elegir_color_titulo_final)
+        self.btn_color_titulo_final.pack(side=tk.LEFT, padx=5)
+        
+        self.preview_color_titulo_final = tk.Canvas(frame_color, width=34, height=20, 
+                                             bd=0, highlightthickness=1, relief=tk.SUNKEN)
+        self.preview_color_titulo_final.create_rectangle(1, 1, 33, 19, fill="#FFFFFF", 
+                                                   outline="#888888", tags=('preview',))
+        self.preview_color_titulo_final.pack(side=tk.LEFT, padx=5, pady=2)
+
+        # Color del subtítulo
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Color del Subtítulo (Final):").pack(anchor=tk.W)
+        frame_color_sub = ttk.Frame(frame)
+        frame_color_sub.pack(fill=tk.X)
+        
+        self.entry_color_subtitulo_final = ttk.Entry(frame_color_sub, width=10)
+        self.entry_color_subtitulo_final.pack(side=tk.LEFT, pady=2)
+        self.entry_color_subtitulo_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        self.btn_color_subtitulo_final = tk.Button(frame_color_sub, text="🎨", width=3, 
+                                            command=self.elegir_color_subtitulo_final)
+        self.btn_color_subtitulo_final.pack(side=tk.LEFT, padx=5)
+        
+        self.preview_color_subtitulo_final = tk.Canvas(frame_color_sub, width=34, height=20, 
+                                                bd=0, highlightthickness=1, relief=tk.SUNKEN)
+        self.preview_color_subtitulo_final.create_rectangle(1, 1, 33, 19, fill="#cccccc", 
+                                                      outline="#888888", tags=('preview',))
+        self.preview_color_subtitulo_final.pack(side=tk.LEFT, padx=5, pady=2)
+
+        # Duración
+        frame = ttk.Frame(parent)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Duración (segundos) (Final):").pack(anchor=tk.W)
+        self.spinbox_duracion_caratula_final = ttk.Spinbox(frame, from_=1, to=10, increment=0.5, width=10)
+        self.spinbox_duracion_caratula_final.pack(anchor=tk.W, pady=2)
+        self.spinbox_duracion_caratula_final.set(3.0)
+
+        # Cuadro de texto opcional
+        frame_tb_enable = ttk.Frame(parent)
+        frame_tb_enable.pack(fill=tk.X, padx=10, pady=2)
+        
+        self.var_textbox_enabled_final = tk.IntVar()
+        ttk.Checkbutton(frame_tb_enable, text='Habilitar cuadro de texto', 
+                       variable=self.var_textbox_enabled_final, 
+                       command=lambda: [self._toggle_textbox_controls_final(), 
+                                      self._update_caratula_final_preview()]).pack(anchor=tk.W)
+        
+        self.frame_textbox_controls_final = ttk.Frame(parent)
+        self.frame_textbox_controls_final.pack(fill=tk.X, padx=10, pady=2)
+        
+        ttk.Label(self.frame_textbox_controls_final, text='Texto:').pack(anchor=tk.W)
+        self.textbox_text_final = tk.Text(self.frame_textbox_controls_final, height=3)
+        self.textbox_text_final.pack(fill=tk.X, pady=2)
+        self.textbox_text_final.bind('<KeyRelease>', lambda e: self._update_caratula_final_preview())
+        
+        # Posición del textbox
+        frame_tb_pos = ttk.Frame(self.frame_textbox_controls_final)
+        frame_tb_pos.pack(fill=tk.X, pady=2)
+        
+        ttk.Label(frame_tb_pos, text='Posición:').pack(side=tk.LEFT)
+        self.combo_textbox_position_final = ttk.Combobox(frame_tb_pos, 
+                                                   values=['top','center','bottom'], 
+                                                   width=10, state='readonly')
+        self.combo_textbox_position_final.pack(side=tk.LEFT, padx=6)
+        self.combo_textbox_position_final.set('bottom')
+        self.combo_textbox_position_final.bind('<<ComboboxSelected>>', 
+                                         lambda e: self._update_caratula_final_preview())
+        
+        # Colores del textbox
+        frame_tb_colors = ttk.Frame(self.frame_textbox_controls_final)
+        frame_tb_colors.pack(fill=tk.X, pady=4)
+        
+        ttk.Label(frame_tb_colors, text='Color Texto:').pack(anchor=tk.W)
+        row = ttk.Frame(frame_tb_colors)
+        row.pack(fill=tk.X)
+        
+        self.entry_textbox_text_color_final = ttk.Entry(row, width=10)
+        self.entry_textbox_text_color_final.pack(side=tk.LEFT)
+        self.entry_textbox_text_color_final.insert(0, "#000000")
+        self.entry_textbox_text_color_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        tk.Button(row, text='🎨', width=3, 
+                 command=self.elegir_color_textbox_text_color_final).pack(side=tk.LEFT, padx=6)
+        
+        ttk.Label(frame_tb_colors, text='Color Fondo:').pack(anchor=tk.W, pady=(5,0))
+        row2 = ttk.Frame(frame_tb_colors)
+        row2.pack(fill=tk.X)
+        
+        self.entry_textbox_bg_final = ttk.Entry(row2, width=10)
+        self.entry_textbox_bg_final.pack(side=tk.LEFT)
+        self.entry_textbox_bg_final.insert(0, "#FFFFFF")
+        self.entry_textbox_bg_final.bind('<FocusOut>', lambda e: self._update_caratula_final_preview())
+        
+        tk.Button(row2, text='🎨', width=3, 
+                 command=self.elegir_color_textbox_bg_final).pack(side=tk.LEFT, padx=6)
+        
+        self._toggle_textbox_controls_final()
+        
+        # Botón guardar
+        frame_bot_guardar = ttk.Frame(parent)
+        frame_bot_guardar.pack(pady=20, fill=tk.X, padx=10)
+        
+        ttk.Button(frame_bot_guardar, text="💾 Guardar Cambios de Carátula Final",
+                  command=self.on_editar_caratula_final).pack(side=tk.RIGHT, padx=6)
+
+    def _toggle_textbox_controls_final(self):
+        if self.var_textbox_enabled_final.get():
+            self.frame_textbox_controls_final.pack(fill=tk.X, padx=10, pady=2)
+        else:
+            self.frame_textbox_controls_final.pack_forget()
+
+    def _update_caratula_final_preview(self):
+        """Actualiza la vista previa de la carátula final en tiempo real"""
+        try:
+            self.canvas_caratula_final_preview.update_idletasks()
+            w = self.canvas_caratula_final_preview.winfo_width() or 560
+            h = self.canvas_caratula_final_preview.winfo_height() or 420
+            
+            color_fondo = self.entry_color_fondo_final.get() or '#000080'
+            if not color_fondo.startswith('#'):
+                color_fondo = f'#{color_fondo}'
+            
+            img = Image.new('RGB', (w, h), color_fondo)
+            draw = ImageDraw.Draw(img)
+            
+            titulo = self.entry_titulo_caratula_final.get() or 'Mi Video'
+            try:
+                size_t = int(self.spin_titulo_size_final.get())
+            except:
+                size_t = 48
+            
+            try:
+                font_t = ImageFont.truetype('arial.ttf', size_t)
+            except:
+                font_t = ImageFont.load_default()
+            
+            color_titulo = self.entry_color_titulo_final.get() or '#FFFFFF'
+            bbox_t = draw.textbbox((0, 0), titulo, font=font_t)
+            w_t = bbox_t[2] - bbox_t[0]
+            h_t = bbox_t[3] - bbox_t[1]
+            draw.text(((w - w_t)//2, h//3), titulo, fill=color_titulo, font=font_t)
+            
+            # Subtítulo
+            subtitulo = self.entry_subtitulo_caratula_final.get()
+            if subtitulo:
+                try:
+                    size_s = int(self.spin_subtitulo_size_final.get())
+                except:
+                    size_s = 24
+                
+                try:
+                    font_s = ImageFont.truetype('arial.ttf', size_s)
+                except:
+                    font_s = ImageFont.load_default()
+                
+                color_subtitulo = self.entry_color_subtitulo_final.get() or '#CCCCCC'
+                bbox_s = draw.textbbox((0, 0), subtitulo, font=font_s)
+                w_s = bbox_s[2] - bbox_s[0]
+                draw.text(((w - w_s)//2, h//3 + h_t + 20), subtitulo, 
+                         fill=color_subtitulo, font=font_s)
+            
+            # Textbox
+            if self.var_textbox_enabled_final.get():
+                tb_text = self.textbox_text_final.get('1.0', 'end').strip()
+                if tb_text:
+                    bg = self.entry_textbox_bg_final.get() or '#FFFFFF'
+                    color = self.entry_textbox_text_color_final.get() or '#000000'
+                    position = self.combo_textbox_position_final.get()
+                    rect_h = 100
+                    margin = 20
+                    if position == 'top':
+                        rect_y = margin
+                    elif position == 'center':
+                        rect_y = (h - rect_h)//2
+                    else:
+                        rect_y = h - rect_h - margin
+                    draw.rectangle([margin, rect_y, w-margin, rect_y+rect_h], 
+                                 fill=bg, outline='#888888', width=2)
+                    try:
+                        font_tb = ImageFont.truetype('arial.ttf', 16)
+                    except:
+                        font_tb = ImageFont.load_default()
+                    draw.text((margin+10, rect_y+10), tb_text, fill=color, font=font_tb)
+            
+            self._caratula_final_preview_tk = ImageTk.PhotoImage(img)
+            self.canvas_caratula_final_preview.delete('all')
+            self.canvas_caratula_final_preview.create_image(w//2, h//2, image=self._caratula_final_preview_tk)
+        except Exception as e:
+            print(f"Error al actualizar preview de carátula final: {e}")
+
+    def _show_caratula_final_preview_window(self):
+        try:
+            W, H = 1280, 720
+            color_fondo = self.entry_color_fondo_final.get() or '#000080'
+            if not color_fondo.startswith('#'):
+                color_fondo = f'#{color_fondo}'
+            img = Image.new('RGB', (W, H), color_fondo)
+            draw = ImageDraw.Draw(img)
+            
+            titulo = self.entry_titulo_caratula_final.get() or 'Mi Video'
+            try:
+                size_t = int(self.spin_titulo_size_final.get()) * 2
+            except:
+                size_t = 96
+            
+            try:
+                font_t = ImageFont.truetype('arial.ttf', size_t)
+            except:
+                font_t = ImageFont.load_default()
+            
+            color_titulo = self.entry_color_titulo_final.get() or '#FFFFFF'
+            bbox_t = draw.textbbox((0, 0), titulo, font=font_t)
+            w_t = bbox_t[2] - bbox_t[0]
+            h_t = bbox_t[3] - bbox_t[1]
+            draw.text(((W - w_t)//2, H//3), titulo, fill=color_titulo, font=font_t)
+            
+            subtitulo = self.entry_subtitulo_caratula_final.get()
+            if subtitulo:
+                try:
+                    size_s = int(self.spin_subtitulo_size_final.get()) * 2
+                except:
+                    size_s = 48
+                try:
+                    font_s = ImageFont.truetype('arial.ttf', size_s)
+                except:
+                    font_s = ImageFont.load_default()
+                color_subtitulo = self.entry_color_subtitulo_final.get() or '#CCCCCC'
+                bbox_s = draw.textbbox((0, 0), subtitulo, font=font_s)
+                w_s = bbox_s[2] - bbox_s[0]
+                draw.text(((W - w_s)//2, H//3 + h_t + 40), subtitulo, 
+                         fill=color_subtitulo, font=font_s)
+
+            if self.var_textbox_enabled_final.get():
+                tb_text = self.textbox_text_final.get('1.0', 'end').strip()
+                if tb_text:
+                    bg = self.entry_textbox_bg_final.get() or '#FFFFFF'
+                    color = self.entry_textbox_text_color_final.get() or '#000000'
+                    position = self.combo_textbox_position_final.get()
+                    rect_h = 150
+                    margin = 40
+                    if position == 'top':
+                        rect_y = margin
+                    elif position == 'center':
+                        rect_y = (H - rect_h)//2
+                    else:
+                        rect_y = H - rect_h - margin
+                    draw.rectangle([margin, rect_y, W-margin, rect_y+rect_h], 
+                                 fill=bg, outline='#888888', width=3)
+                    try:
+                        font_tb = ImageFont.truetype('arial.ttf', 24)
+                    except:
+                        font_tb = ImageFont.load_default()
+                    draw.text((margin+20, rect_y+20), tb_text, fill=color, font=font_tb)
+
+            # Crear ventana
+            win = tk.Toplevel(self.root)
+            win.title('Vista Previa Grande - Carátula Final')
+            win.geometry('1000x600')
+            
+            canvas_prev = tk.Canvas(win, width=980, height=550)
+            canvas_prev.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            
+            img.thumbnail((980, 550), Image.Resampling.LANCZOS)
+            img_tk = ImageTk.PhotoImage(img)
+            
+            canvas_prev.create_image(490, 275, image=img_tk)
+            canvas_prev.image = img_tk
+            
+            ttk.Button(win, text='Cerrar', command=win.destroy).pack(pady=10)
+        except Exception as e:
+            print(f"Error en vista previa grande final: {e}")
+
+    def elegir_color_fondo_final(self):
+        color = colorchooser.askcolor(title="Elegir color de fondo (Final)", 
+                                     initialcolor=self.entry_color_fondo_final.get() or '#000080')
+        if color and color[1]:
+            self.entry_color_fondo_final.delete(0, tk.END)
+            self.entry_color_fondo_final.insert(0, color[1])
+            try:
+                if not color[1].startswith('#'):
+                    c = f"#{color[1]}"
+                else:
+                    c = color[1]
+                self.preview_color_fondo_final.itemconfig('preview', fill=c)
+            except Exception:
+                pass
+            self._update_caratula_final_preview()
+
+    def elegir_color_titulo_final(self):
+        color = colorchooser.askcolor(title="Elegir color del título (Final)", 
+                                     initialcolor=self.entry_color_titulo_final.get() or '#FFFFFF')
+        if color and color[1]:
+            self.entry_color_titulo_final.delete(0, tk.END)
+            self.entry_color_titulo_final.insert(0, color[1])
+            try:
+                self.preview_color_titulo_final.itemconfig('preview', fill=color[1])
+            except Exception:
+                pass
+            self._update_caratula_final_preview()
+
+    def elegir_color_subtitulo_final(self):
+        color = colorchooser.askcolor(title="Elegir color del subtítulo (Final)", 
+                                     initialcolor=self.entry_color_subtitulo_final.get() or '#CCCCCC')
+        if color and color[1]:
+            self.entry_color_subtitulo_final.delete(0, tk.END)
+            self.entry_color_subtitulo_final.insert(0, color[1])
+            try:
+                self.preview_color_subtitulo_final.itemconfig('preview', fill=color[1])
+            except Exception:
+                pass
+            self._update_caratula_final_preview()
+
+    def elegir_color_textbox_text_color_final(self):
+        color = colorchooser.askcolor(title="Elegir color del texto (Final)", 
+                                     initialcolor=self.entry_textbox_text_color_final.get() or '#000000')
+        if color and color[1]:
+            self.entry_textbox_text_color_final.delete(0, tk.END)
+            self.entry_textbox_text_color_final.insert(0, color[1])
+            self._update_caratula_final_preview()
+
+    def elegir_color_textbox_bg_final(self):
+        color = colorchooser.askcolor(title="Elegir color de fondo del cuadro (Final)", 
+                                     initialcolor=self.entry_textbox_bg_final.get() or '#FFFFFF')
+        if color and color[1]:
+            self.entry_textbox_bg_final.delete(0, tk.END)
+            self.entry_textbox_bg_final.insert(0, color[1])
+            self._update_caratula_final_preview()
+
+    def actualizar_caratula_final(self, caratula):
+        """Actualiza los campos de la carátula final"""
+        self.entry_titulo_caratula_final.delete(0, tk.END)
+        self.entry_titulo_caratula_final.insert(0, caratula.titulo)
+        
+        self.entry_subtitulo_caratula_final.delete(0, tk.END)
+        self.entry_subtitulo_caratula_final.insert(0, caratula.subtitulo)
+        
+        self.entry_color_fondo_final.delete(0, tk.END)
+        self.entry_color_fondo_final.insert(0, caratula.color_fondo)
+        try:
+            self.preview_color_fondo_final.itemconfig('preview', fill=caratula.color_fondo)
+        except Exception:
+            pass
+        
+        self.entry_color_titulo_final.delete(0, tk.END)
+        self.entry_color_titulo_final.insert(0, caratula.color_titulo)
+        try:
+            self.preview_color_titulo_final.itemconfig('preview', fill=caratula.color_titulo)
+        except Exception:
+            pass
+        
+        self.entry_color_subtitulo_final.delete(0, tk.END)
+        self.entry_color_subtitulo_final.insert(0, caratula.color_subtitulo)
+        try:
+            self.preview_color_subtitulo_final.itemconfig('preview', fill=caratula.color_subtitulo)
+        except Exception:
+            pass
+        
+        self.combo_titulo_family_final.set(caratula.fuente_titulo)
+        self.spin_titulo_size_final.set(caratula.tamaño_titulo)
+        self.var_titulo_bold_final.set(1 if caratula.titulo_bold else 0)
+        self.var_titulo_italic_final.set(1 if caratula.titulo_italic else 0)
+        
+        self.combo_subtitulo_family_final.set(caratula.fuente_subtitulo)
+        self.spin_subtitulo_size_final.set(caratula.tamaño_subtitulo)
+        self.var_subtitulo_bold_final.set(1 if caratula.subtitulo_bold else 0)
+        self.var_subtitulo_italic_final.set(1 if caratula.subtitulo_italic else 0)
+        
+        self.spinbox_duracion_caratula_final.set(caratula.duracion)
+        
+        # Textbox
+        self.var_textbox_enabled_final.set(1 if caratula.textbox_enabled else 0)
+        self.textbox_text_final.delete('1.0', tk.END)
+        self.textbox_text_final.insert('1.0', caratula.textbox_text)
+        self.entry_textbox_text_color_final.delete(0, tk.END)
+        self.entry_textbox_text_color_final.insert(0, caratula.textbox_text_color)
+        self.entry_textbox_bg_final.delete(0, tk.END)
+        self.entry_textbox_bg_final.insert(0, caratula.textbox_bg)
+        self.combo_textbox_position_final.set(caratula.textbox_position)
+        
+        self._toggle_textbox_controls_final()
+        self._update_caratula_final_preview()
+
+    def on_editar_caratula_final(self):
+        if hasattr(self, 'callback_editar_caratula_final') and self.callback_editar_caratula_final:
+            self.callback_editar_caratula_final()

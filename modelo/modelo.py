@@ -190,6 +190,8 @@ class ProyectoVideo:
     def __init__(self, nombre: str = "Nuevo Proyecto"):
         self.nombre = nombre
         self.caratula = Caratula()
+        # Carátula final (opcional). Si no se especifica, usar la misma carátula.
+        self.caratula_final = Caratula()
         self.fotos: List[Foto] = []
         self.musica: Optional[Musica] = None
         self.videos: List[dict] = []
@@ -227,6 +229,7 @@ class ProyectoVideo:
         return {
             'nombre': self.nombre,
             'caratula': self.caratula.to_dict(),
+            'caratula_final': self.caratula_final.to_dict(),
             'fotos': [f.to_dict() for f in self.fotos],
             'musica': self.musica.to_dict() if self.musica else None,
             'videos': [v for v in self.videos],
@@ -242,6 +245,11 @@ class ProyectoVideo:
         """Crea un proyecto desde un diccionario"""
         proyecto = ProyectoVideo(data.get('nombre', 'Nuevo Proyecto'))
         proyecto.caratula = Caratula.from_dict(data.get('caratula', {}))
+        # caratula_final puede no existir en proyectos antiguos
+        try:
+            proyecto.caratula_final = Caratula.from_dict(data.get('caratula_final', {}))
+        except Exception:
+            proyecto.caratula_final = Caratula.from_dict(data.get('caratula', {}))
         proyecto.fotos = [Foto.from_dict(f) for f in data.get('fotos', [])]
         if data.get('musica'):
             proyecto.musica = Musica.from_dict(data['musica'])

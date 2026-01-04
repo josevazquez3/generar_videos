@@ -141,6 +141,30 @@ class DialogoEditarFoto:
         ], state='readonly')
         self.combo_posicion_texto.pack(fill=tk.X, pady=2)
         self.combo_posicion_texto.set("bottom - Abajo")
+
+        # Brillo
+        frame = ttk.Frame(scrollable_frame)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Brillo (0.0 - 2.0):").pack(anchor=tk.W)
+        self.spin_brillo = ttk.Spinbox(frame, from_=0.0, to=2.0, increment=0.1, width=10)
+        self.spin_brillo.pack(anchor=tk.W, pady=2)
+        self.spin_brillo.set(1.0)
+
+        # Contraste
+        frame = ttk.Frame(scrollable_frame)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Contraste (0.0 - 2.0):").pack(anchor=tk.W)
+        self.spin_contraste = ttk.Spinbox(frame, from_=0.0, to=2.0, increment=0.1, width=10)
+        self.spin_contraste.pack(anchor=tk.W, pady=2)
+        self.spin_contraste.set(1.0)
+
+        # Rotación
+        frame = ttk.Frame(scrollable_frame)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Rotación (grados):").pack(anchor=tk.W)
+        self.combo_rotacion = ttk.Combobox(frame, values=["0 - Ninguna", "90", "180", "270"], state='readonly')
+        self.combo_rotacion.pack(fill=tk.X, pady=2)
+        self.combo_rotacion.set("0 - Ninguna")
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -197,6 +221,25 @@ class DialogoEditarFoto:
         }
         self.combo_posicion_texto.set(posiciones_map.get(foto.posicion_texto, "bottom - Abajo"))
         
+        # Valores de edición: brillo, contraste, rotación
+        try:
+            self.spin_brillo.set(foto.brillo)
+        except Exception:
+            self.spin_brillo.set(1.0)
+
+        try:
+            self.spin_contraste.set(foto.contraste)
+        except Exception:
+            self.spin_contraste.set(1.0)
+
+        try:
+            if foto.rotacion == 0:
+                self.combo_rotacion.set("0 - Ninguna")
+            else:
+                self.combo_rotacion.set(str(foto.rotacion))
+        except Exception:
+            self.combo_rotacion.set("0 - Ninguna")
+        
     def elegir_color_marco(self):
         """Abre el selector de color para el marco"""
         color = colorchooser.askcolor(title="Elegir Color del Marco")
@@ -224,6 +267,26 @@ class DialogoEditarFoto:
             'color_texto': self.entry_color_texto.get(),
             'posicion_texto': self.combo_posicion_texto.get().split(' - ')[0]
         }
+        # Añadir parámetros de edición: brillo, contraste, rotación
+        try:
+            self.resultado['brillo'] = float(self.spin_brillo.get())
+        except Exception:
+            self.resultado['brillo'] = 1.0
+
+        try:
+            self.resultado['contraste'] = float(self.spin_contraste.get())
+        except Exception:
+            self.resultado['contraste'] = 1.0
+
+        try:
+            rot_text = self.combo_rotacion.get()
+            if ' - ' in rot_text:
+                rot_val = int(rot_text.split(' - ')[0])
+            else:
+                rot_val = int(rot_text)
+            self.resultado['rotacion'] = rot_val
+        except Exception:
+            self.resultado['rotacion'] = 0
         self.ventana.destroy()
     
     def cancelar(self):

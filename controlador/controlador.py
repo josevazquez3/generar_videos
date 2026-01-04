@@ -51,6 +51,7 @@ class ControladorVideoMaker:
         self.vista.callback_agregar_video = self.agregar_video
         self.vista.callback_eliminar_video = self.eliminar_video
         self.vista.callback_editar_caratula = self.editar_caratula
+        self.vista.callback_editar_caratula_final = self.editar_caratula_final
         # callback para aplicar edición directa desde la vista (preview)
         self.vista.callback_aplicar_edicion_foto = self.aplicar_edicion_foto
         self.vista.callback_descargar_youtube = self.descargar_youtube
@@ -584,6 +585,72 @@ class ControladorVideoMaker:
         self.vista.actualizar_estado("Carátula actualizada")
         self.vista.mostrar_mensaje("Éxito", "Carátula actualizada correctamente")
 
+    def editar_caratula_final(self):
+        """Edita las propiedades de la carátula final (desde la vista)"""
+        caratula = getattr(self.modelo.proyecto_actual, 'caratula_final', None)
+        if caratula is None:
+            caratula = self.modelo.proyecto_actual.caratula
+
+        # Obtener datos del formulario final
+        caratula.titulo = self.vista.entry_titulo_caratula_final.get()
+        caratula.subtitulo = self.vista.entry_subtitulo_caratula_final.get()
+        caratula.color_fondo = self.vista.entry_color_fondo_final.get()
+        caratula.color_titulo = self.vista.entry_color_titulo_final.get()
+        # color subtitulo
+        try:
+            caratula.color_subtitulo = self.vista.entry_color_subtitulo_final.get()
+        except Exception:
+            pass
+
+        # Fuentes y estilos
+        try:
+            caratula.fuente_titulo = self.vista.combo_titulo_family_final.get()
+            caratula.tamaño_titulo = int(self.vista.spin_titulo_size_final.get())
+            caratula.titulo_bold = bool(self.vista.var_titulo_bold_final.get())
+            caratula.titulo_italic = bool(self.vista.var_titulo_italic_final.get())
+
+            caratula.fuente_subtitulo = self.vista.combo_subtitulo_family_final.get()
+            caratula.tamaño_subtitulo = int(self.vista.spin_subtitulo_size_final.get())
+            caratula.subtitulo_bold = bool(self.vista.var_subtitulo_bold_final.get())
+            caratula.subtitulo_italic = bool(self.vista.var_subtitulo_italic_final.get())
+        except Exception:
+            pass
+
+        try:
+            caratula.duracion = float(self.vista.spinbox_duracion_caratula_final.get())
+        except Exception:
+            caratula.duracion = 3.0
+
+        # Textbox
+        try:
+            caratula.textbox_enabled = bool(self.vista.var_textbox_enabled_final.get())
+            caratula.textbox_text = self.vista.textbox_text_final.get('1.0', 'end').strip()
+            caratula.textbox_text_color = self.vista.entry_textbox_text_color_final.get()
+            caratula.textbox_bg = self.vista.entry_textbox_bg_final.get()
+            try:
+                caratula.textbox_border = int(self.vista.spin_textbox_border.get())
+            except Exception:
+                caratula.textbox_border = 1
+            caratula.textbox_position = self.vista.combo_textbox_position_final.get()
+            caratula.textbox_font = getattr(self.vista, 'combo_textbox_family_final', caratula.textbox_font)
+            try:
+                caratula.textbox_font_size = int(getattr(self.vista, 'spin_textbox_size_final', tk.IntVar()).get())
+            except Exception:
+                caratula.textbox_font_size = caratula.textbox_font_size
+            caratula.textbox_font_bold = bool(getattr(self.vista, 'var_textbox_bold_final', tk.IntVar()).get())
+            caratula.textbox_font_italic = bool(getattr(self.vista, 'var_textbox_italic_final', tk.IntVar()).get())
+
+            # validar colores del textbox
+            # (validaciones sencillas omitidas aquí para simplicidad)
+        except Exception:
+            pass
+
+        # Guardar en el modelo
+        self.modelo.proyecto_actual.caratula_final = caratula
+
+        self.vista.actualizar_estado("Carátula final actualizada")
+        self.vista.mostrar_mensaje("Éxito", "Carátula final actualizada correctamente")
+
     # --- Métodos para manejar imágenes en la carátula desde la vista ---
     def agregar_imagen_caratula(self):
         """Abre diálogo para agregar una imagen a la carátula"""
@@ -713,6 +780,11 @@ class ControladorVideoMaker:
             self.actualizar_lista_fotos()
             self.vista.actualizar_info_musica(self.modelo.proyecto_actual.musica)
             self.vista.actualizar_caratula(self.modelo.proyecto_actual.caratula)
+            # actualizar carátula final
+            try:
+                self.vista.actualizar_caratula_final(getattr(self.modelo.proyecto_actual, 'caratula_final', None) or self.modelo.proyecto_actual.caratula)
+            except Exception:
+                pass
             # actualizar lista de imagenes en la vista
             try:
                 self.vista.actualizar_imagenes_list(self.modelo.proyecto_actual.caratula.imagenes_caratula)
