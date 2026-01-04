@@ -59,19 +59,22 @@ class DialogoEditarFoto:
         self.entry_titulo = ttk.Entry(frame, font=('Arial', 10))
         self.entry_titulo.pack(fill=tk.X, pady=2)
         
-        # Duración
+        # Duración (en minutos)
         frame = ttk.Frame(scrollable_frame)
         frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Label(frame, text="Duración (segundos):").pack(anchor=tk.W)
-        self.spinbox_duracion = ttk.Spinbox(frame, from_=0.5, to=60, increment=0.5, width=10)
+        ttk.Label(frame, text="Duración (minutos):").pack(anchor=tk.W)
+        # Rango en minutos: 0.1 (6s) hasta 60 minutos, incremento 0.1
+        self.spinbox_duracion = ttk.Spinbox(frame, from_=0.1, to=60, increment=0.1, width=10)
         self.spinbox_duracion.pack(anchor=tk.W, pady=2)
-        self.spinbox_duracion.set(3.0)
+        # Valor por defecto 0.5 minutos (30 segundos)
+        self.spinbox_duracion.set(0.5)
         
         # Efecto de transición
         frame = ttk.Frame(scrollable_frame)
         frame.pack(fill=tk.X, padx=10, pady=5)
         ttk.Label(frame, text="Efecto de Transición:").pack(anchor=tk.W)
         self.combo_efecto = ttk.Combobox(frame, values=[
+            "ninguno - Sin efecto",
             "fade - Fundido",
             "slide_left - Deslizar desde izquierda",
             "slide_right - Deslizar desde derecha",
@@ -81,7 +84,7 @@ class DialogoEditarFoto:
             "zigzag - Zig-zag"
         ], state='readonly')
         self.combo_efecto.pack(fill=tk.X, pady=2)
-        self.combo_efecto.set("fade - Fundido")
+        self.combo_efecto.set("ninguno - Sin efecto")
         
         # Tipo de marco
         frame = ttk.Frame(scrollable_frame)
@@ -181,10 +184,16 @@ class DialogoEditarFoto:
         self.entry_titulo.delete(0, tk.END)
         self.entry_titulo.insert(0, foto.titulo)
         
-        self.spinbox_duracion.set(foto.duracion)
+        # El modelo guarda la duración en segundos; para mostrarla aquí convertimos a minutos
+        try:
+            minutos = float(foto.duracion) / 60.0
+        except Exception:
+            minutos = 0.5
+        self.spinbox_duracion.set(minutos)
         
         # Efecto
         efectos_map = {
+            None: "ninguno - Sin efecto",
             "fade": "fade - Fundido",
             "slide_left": "slide_left - Deslizar desde izquierda",
             "slide_right": "slide_right - Deslizar desde derecha",
@@ -193,7 +202,7 @@ class DialogoEditarFoto:
             "zoom": "zoom - Zoom",
             "zigzag": "zigzag - Zig-zag"
         }
-        self.combo_efecto.set(efectos_map.get(foto.efecto, "fade - Fundido"))
+        self.combo_efecto.set(efectos_map.get(foto.efecto, "ninguno - Sin efecto"))
         
         # Marco
         marcos_map = {
@@ -259,8 +268,10 @@ class DialogoEditarFoto:
         # Crear diccionario con los datos
         self.resultado = {
             'titulo': self.entry_titulo.get(),
-            'duracion': float(self.spinbox_duracion.get()),
-            'efecto': self.combo_efecto.get().split(' - ')[0],
+            # Convertir minutos a segundos para almacenar en el modelo
+            'duracion': float(self.spinbox_duracion.get()) * 60.0,
+            # Guardar efecto como `None` si se selecciona 'ninguno'
+            'efecto': (None if self.combo_efecto.get().split(' - ')[0] == 'ninguno' else self.combo_efecto.get().split(' - ')[0]),
             'marco': self.combo_marco.get().split(' - ')[0] if self.combo_marco.get().split(' - ')[0] != 'ninguno' else None,
             'color_marco': self.entry_color_marco.get(),
             'texto': self.entry_texto.get(),

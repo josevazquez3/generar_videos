@@ -6,7 +6,9 @@ Interfaz gráfica principal con Tkinter y vistas previas en tiempo real
 import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser, font as tkfont, filedialog
 from PIL import Image, ImageTk, ImageEnhance, ImageDraw, ImageFont
+import time
 import os
+
 
 class VistaPrincipal:
     """Vista principal de la aplicación"""
@@ -49,6 +51,9 @@ class VistaPrincipal:
         self._preview_image_tk = None
         self._caratula_preview_tk = None
         self._imagen_preview_tk = None
+        # Animación de preview
+        self._anim_after_id = None
+        self._anim_state = None
         
         # Crear interfaz
         self.crear_menu()
@@ -277,15 +282,15 @@ class VistaPrincipal:
                 img = self._aplicar_texto_preview(img, foto.texto, foto.color_texto, 
                                                  foto.posicion_texto)
             
-            # Redimensionar para canvas
-            img.thumbnail((580, 430), Image.Resampling.LANCZOS)
-            
-            # Convertir a PhotoImage
-            self._preview_image_tk = ImageTk.PhotoImage(img)
-            
-            # Mostrar en canvas
-            self.canvas_foto_preview.delete('all')
-            self.canvas_foto_preview.create_image(300, 225, image=self._preview_image_tk)
+            # Redimensionar para canvas (usaremos esta imagen como base para animaciones)
+            img_for_anim = img.copy()
+            img_for_anim.thumbnail((580, 430), Image.Resampling.LANCZOS)
+
+            # Detener cualquier animación previa
+            self._stop_preview_animation()
+
+            # Iniciar animación que simula el efecto
+            self._start_preview_animation(foto, img_for_anim)
             
         except Exception as e:
             print(f"Error al generar preview: {e}")
@@ -293,6 +298,132 @@ class VistaPrincipal:
             self.canvas_foto_preview.create_text(10, 10, anchor='nw', 
                                                 text=f"Error: {str(e)}", 
                                                 fill='red', font=('Arial', 10))
+
+    def _stop_preview_animation(self):
+        """Detiene cualquier animación de preview en curso"""
+        try:
+            if getattr(self, '_anim_after_id', None):
+                self.canvas_foto_preview.after_cancel(self._anim_after_id)
+        except Exception:
+            pass
+        self._anim_after_id = None
+        self._anim_state = None
+
+    def _start_preview_animation(self, foto, base_img):
+        """Configura y comienza la animación que simula el efecto de la foto"""
+        # Guardar estado de animación
+        try:
+            dur = min(2.0, max(0.5, float(getattr(foto, 'duracion', 3.0))))
+        except Exception:
+            dur = 1.5
+        self._anim_state = {
+            'foto': foto,
+            'base_img': base_img.convert('RGBA'),
+            'start': time.time(),
+            'duration': dur,
+            'effect': getattr(foto, 'efecto', 'fade')
+        }
+        # Primer paso
+        self._anim_step()
+
+    def _anim_step(self):
+        """Un frame de la animación de preview"""
+        try:
+            state = self._anim_state
+            if not state:
+                return
+
+            now = time.time()
+            elapsed = now - state['start']
+            dur = state['duration']
+            # Loopar la animación
+            t = (elapsed % dur) / dur
+
+            effect = state['effect']
+            base = state['base_img']
+            w = self.canvas_foto_preview.winfo_width() or 580
+            h = self.canvas_foto_preview.winfo_height() or 430
+
+            # Crear fondo negro
+            frame = Image.new('RGB', (w, h), (0, 0, 0))
+
+            bw, bh = base.size
+
+            if effect == 'fade':
+                # fade in/out
+                alpha = t if t <= 0.5 else (1 - t)
+                alpha = max(0.0, min(1.0, alpha * 2))
+                blended = Image.blend(Image.new('RGB', base.size, (0, 0, 0)), base.convert('RGB'), alpha)
+                # centrar
+                x = (w - bw) // 2
+                y = (h - bh) // 2
+                frame.paste(blended, (x, y))
+
+            elif effect == 'slide_left':
+                x = int(-bw * (1 - t))
+                y = (h - bh) // 2
+                frame.paste(base.convert('RGB'), (x, y), base)
+
+            elif effect == 'slide_right':
+                x = int(bw * (1 - t))
+                y = (h - bh) // 2
+                frame.paste(base.convert('RGB'), (x, y), base)
+
+            elif effect == 'slide_up':
+                x = (w - bw) // 2
+                y = int(-bh * (1 - t))
+                frame.paste(base.convert('RGB'), (x, y), base)
+
+            elif effect == 'slide_down':
+                x = (w - bw) // 2
+                y = int(bh * (1 - t))
+                frame.paste(base.convert('RGB'), (x, y), base)
+
+            elif effect == 'zoom':
+                scale = 1.0 + 0.2 * t
+                nw = max(1, int(bw * scale))
+                nh = max(1, int(bh * scale))
+                resized = base.resize((nw, nh), Image.Resampling.LANCZOS).convert('RGB')
+                x = (w - nw) // 2
+                y = (h - nh) // 2
+                frame.paste(resized, (x, y))
+
+            elif effect == 'zigzag':
+                progress = t
+                if progress < 0.25:
+                    x = int(bw * (1 - progress * 4))
+                    y = 0
+                elif progress < 0.5:
+                    x = 0
+                    y = int(bh * ((progress - 0.25) * 4))
+                elif progress < 0.75:
+                    x = int(bw * ((progress - 0.5) * 4))
+                    y = bh
+                else:
+                    x = int(bw * (1 - (progress - 0.75) * 4))
+                    y = int(bh * (1 - (progress - 0.75) * 4))
+                # ajustar para que esté dentro del canvas
+                x = max(-bw, min(w, x + (w - bw)//2))
+                y = max(-bh, min(h, y + (h - bh)//2))
+                frame.paste(base.convert('RGB'), (x, y), base)
+
+            else:
+                # default: mostrar la imagen centrada
+                x = (w - bw) // 2
+                y = (h - bh) // 2
+                frame.paste(base.convert('RGB'), (x, y), base)
+
+            # Convertir y mostrar
+            self._preview_image_tk = ImageTk.PhotoImage(frame)
+            self.canvas_foto_preview.delete('all')
+            self.canvas_foto_preview.create_image(w//2, h//2, image=self._preview_image_tk)
+
+            # Agendar siguiente frame (~24 FPS)
+            self._anim_after_id = self.canvas_foto_preview.after(int(1000/24), self._anim_step)
+
+        except Exception as e:
+            print(f"Error en animación de preview: {e}")
+            self._stop_preview_animation()
     
     def _aplicar_marco_preview(self, img, tipo_marco, color):
         """Aplica marco a la imagen de preview"""

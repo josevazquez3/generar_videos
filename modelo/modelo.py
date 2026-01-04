@@ -16,7 +16,8 @@ class Foto:
         self.titulo = titulo
         self.orden = orden
         self.duracion = 3.0
-        self.efecto = "fade"
+        # Por defecto no aplicar efecto
+        self.efecto = None
         self.marco = None
         self.color_marco = "#FFFFFF"
         self.texto = ""
@@ -50,7 +51,8 @@ class Foto:
         """Crea una foto desde un diccionario"""
         foto = Foto(data['ruta'], data.get('titulo', ''), data.get('orden', 0))
         foto.duracion = data.get('duracion', 3.0)
-        foto.efecto = data.get('efecto', 'fade')
+        # Si no existe la clave 'efecto', mantener None para no aplicar transición por defecto
+        foto.efecto = data.get('efecto', None)
         foto.marco = data.get('marco')
         foto.color_marco = data.get('color_marco', '#FFFFFF')
         foto.texto = data.get('texto', '')
