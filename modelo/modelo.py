@@ -23,6 +23,8 @@ class Foto:
         self.texto = ""
         self.color_texto = "#000000"
         self.posicion_texto = "bottom"
+        # Tamaño del texto en la foto (píxeles)
+        self.tamaño_texto = 36
         # Nuevos atributos para edición
         self.brillo = 1.0
         self.contraste = 1.0
@@ -41,6 +43,7 @@ class Foto:
             'texto': self.texto,
             'color_texto': self.color_texto,
             'posicion_texto': self.posicion_texto,
+            'tamaño_texto': self.tamaño_texto,
             'brillo': self.brillo,
             'contraste': self.contraste,
             'rotacion': self.rotacion
@@ -58,6 +61,7 @@ class Foto:
         foto.texto = data.get('texto', '')
         foto.color_texto = data.get('color_texto', '#000000')
         foto.posicion_texto = data.get('posicion_texto', 'bottom')
+        foto.tamaño_texto = data.get('tamaño_texto', 36)
         foto.brillo = data.get('brillo', 1.0)
         foto.contraste = data.get('contraste', 1.0)
         foto.rotacion = data.get('rotacion', 0)

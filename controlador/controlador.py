@@ -213,6 +213,10 @@ class ControladorVideoMaker:
             foto.texto = resultado['texto']
             foto.color_texto = resultado['color_texto']
             foto.posicion_texto = resultado['posicion_texto']
+            try:
+                foto.tamaño_texto = int(resultado.get('tamaño_texto', 36))
+            except Exception:
+                foto.tamaño_texto = 36
             foto.brillo = resultado['brillo']
             foto.contraste = resultado['contraste']
             foto.rotacion = resultado['rotacion']

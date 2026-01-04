@@ -342,7 +342,8 @@ class GeneradorVideo:
         
         # Agregar texto si existe
         if foto.texto:
-            img = self._agregar_texto_foto(img, foto.texto, foto.color_texto, foto.posicion_texto)
+            tamaño = getattr(foto, 'tamaño_texto', None)
+            img = self._agregar_texto_foto(img, foto.texto, foto.color_texto, foto.posicion_texto, tamaño)
         
         # Convertir a array numpy
         img_array = np.array(img)
@@ -482,14 +483,20 @@ class GeneradorVideo:
         
         return img
     
-    def _agregar_texto_foto(self, img: Image.Image, texto: str, color: str, posicion: str) -> Image.Image:
+    def _agregar_texto_foto(self, img: Image.Image, texto: str, color: str, posicion: str, font_size: int = None) -> Image.Image:
         """Agrega texto sobre la imagen"""
         draw = ImageDraw.Draw(img)
         width, height = img.size
         
-        # Cargar fuente proporcional al tamaño de la imagen
-        font_size = max(30, width // 30)
-        font = self._cargar_fuente("Arial", font_size)
+        # Determinar tamaño de fuente: usar el proporcionado si existe, sino calcular proporcionalmente
+        if font_size is None:
+            font_size_calc = max(30, width // 30)
+        else:
+            try:
+                font_size_calc = int(font_size)
+            except Exception:
+                font_size_calc = max(30, width // 30)
+        font = self._cargar_fuente("Arial", font_size_calc)
         
         # Calcular posición del texto
         bbox = draw.textbbox((0, 0), texto, font=font)

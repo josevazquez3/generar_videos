@@ -119,6 +119,16 @@ class DialogoEditarFoto:
         ttk.Label(frame, text="Texto sobre la Foto:").pack(anchor=tk.W)
         self.entry_texto = ttk.Entry(frame, font=('Arial', 10))
         self.entry_texto.pack(fill=tk.X, pady=2)
+
+        # Opciones de estilo: negrita y subrayado
+        frame = ttk.Frame(scrollable_frame)
+        frame.pack(fill=tk.X, padx=10, pady=2)
+        self.var_texto_bold = tk.IntVar()
+        self.var_texto_underline = tk.IntVar()
+        chk_bold = ttk.Checkbutton(frame, text="Negrita", variable=self.var_texto_bold)
+        chk_bold.pack(side=tk.LEFT, padx=(0, 8))
+        chk_underline = ttk.Checkbutton(frame, text="Subrayado", variable=self.var_texto_underline)
+        chk_underline.pack(side=tk.LEFT)
         
         # Color del texto
         frame = ttk.Frame(scrollable_frame)
@@ -144,6 +154,14 @@ class DialogoEditarFoto:
         ], state='readonly')
         self.combo_posicion_texto.pack(fill=tk.X, pady=2)
         self.combo_posicion_texto.set("bottom - Abajo")
+
+        # Tamaño del texto
+        frame = ttk.Frame(scrollable_frame)
+        frame.pack(fill=tk.X, padx=10, pady=5)
+        ttk.Label(frame, text="Tamaño del Texto:").pack(anchor=tk.W)
+        self.spin_texto_size = ttk.Spinbox(frame, from_=8, to=200, increment=1, width=10)
+        self.spin_texto_size.pack(anchor=tk.W, pady=2)
+        self.spin_texto_size.set(36)
 
         # Brillo
         frame = ttk.Frame(scrollable_frame)
@@ -229,6 +247,11 @@ class DialogoEditarFoto:
             "bottom": "bottom - Abajo"
         }
         self.combo_posicion_texto.set(posiciones_map.get(foto.posicion_texto, "bottom - Abajo"))
+
+        try:
+            self.spin_texto_size.set(foto.tamaño_texto)
+        except Exception:
+            self.spin_texto_size.set(36)
         
         # Valores de edición: brillo, contraste, rotación
         try:
@@ -278,6 +301,10 @@ class DialogoEditarFoto:
             'color_texto': self.entry_color_texto.get(),
             'posicion_texto': self.combo_posicion_texto.get().split(' - ')[0]
         }
+        try:
+            self.resultado['tamaño_texto'] = int(self.spin_texto_size.get())
+        except Exception:
+            self.resultado['tamaño_texto'] = 36
         # Añadir parámetros de edición: brillo, contraste, rotación
         try:
             self.resultado['brillo'] = float(self.spin_brillo.get())
