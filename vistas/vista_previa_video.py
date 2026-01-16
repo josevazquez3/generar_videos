@@ -9,6 +9,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont, ImageEnhance
 import os
 from typing import List
 import time
+import math
 
 class VistaPreviewVideo:
     """Ventana de vista previa del video"""

@@ -236,8 +236,11 @@ class VistaPrincipal:
             print(f"Error: {e}")
     
     def _mostrar_preview_foto(self, foto):
-        """Muestra preview de foto"""
+        """Muestra preview de foto con soporte de efectos animados"""
         try:
+            # Cancelar cualquier animación previa
+            self._stop_animation()
+
             if not foto.ruta or not os.path.exists(foto.ruta):
                 self.canvas_foto_preview.delete('all')
                 self.canvas_foto_preview.create_text(300, 225,
@@ -249,25 +252,120 @@ class VistaPrincipal:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             
+            # Aplicar edición básica
             if foto.rotacion != 0:
                 img = img.rotate(-foto.rotacion, expand=True)
-            
             if foto.brillo != 1.0:
                 enhancer = ImageEnhance.Brightness(img)
                 img = enhancer.enhance(foto.brillo)
-            
             if foto.contraste != 1.0:
                 enhancer = ImageEnhance.Contrast(img)
                 img = enhancer.enhance(foto.contraste)
+
+            # Preparar imagen base ajustada al canvas
+            base = img.copy()
+            base.thumbnail((580, 430), Image.Resampling.LANCZOS)
+
+            efecto = (foto.efecto or '').strip()
+            if efecto and efecto != 'ninguno':
+                # Generar frames de animación según el efecto seleccionado
+                frames = self._generate_effect_frames(base, efecto, steps=30)
+                if frames:
+                    self._anim_state = {"frames": frames, "index": 0}
+                    self.canvas_foto_preview.delete('all')
+                    # Comenzar animación
+                    self._animate_preview_frames()
+                    return
             
-            img.thumbnail((580, 430), Image.Resampling.LANCZOS)
-            
-            self._preview_image_tk = ImageTk.PhotoImage(img)
+            # Modo estático (sin efecto)
+            self._preview_image_tk = ImageTk.PhotoImage(base)
             self.canvas_foto_preview.delete('all')
             self.canvas_foto_preview.create_image(300, 225, image=self._preview_image_tk)
             
         except Exception as e:
             print(f"Error: {e}")
+
+    def _stop_animation(self):
+        """Detiene cualquier animación activa en la vista previa"""
+        try:
+            if self._anim_after_id is not None:
+                self.root.after_cancel(self._anim_after_id)
+        except Exception:
+            pass
+        self._anim_after_id = None
+        self._anim_state = None
+
+    def _generate_effect_frames(self, base_img, efecto: str, steps: int = 30):
+        """Genera una lista de frames PIL aplicando el efecto indicado"""
+        try:
+            canvas_w, canvas_h = 600, 450
+            # Asegurar tamaño base
+            w, h = base_img.size
+            # Fondo blanco para la vista previa
+            def compose(img, dx=0, dy=0):
+                bg = Image.new('RGB', (canvas_w, canvas_h), '#ffffff')
+                x = (canvas_w - img.size[0]) // 2 + dx
+                y = (canvas_h - img.size[1]) // 2 + dy
+                bg.paste(img, (x, y))
+                return bg
+
+            frames = []
+            for i in range(steps):
+                t = i / max(steps - 1, 1)
+                if efecto == 'fade':
+                    # Fundido desde negro a imagen
+                    black = Image.new('RGB', base_img.size, '#000000')
+                    blended = Image.blend(black, base_img, t)
+                    frames.append(compose(blended))
+                elif efecto == 'slide_left':
+                    dx = int((1.0 - t) * (-canvas_w // 2))
+                    frames.append(compose(base_img, dx=dx, dy=0))
+                elif efecto == 'slide_right':
+                    dx = int((1.0 - t) * (canvas_w // 2))
+                    frames.append(compose(base_img, dx=dx, dy=0))
+                elif efecto == 'slide_up':
+                    dy = int((1.0 - t) * (-canvas_h // 2))
+                    frames.append(compose(base_img, dx=0, dy=dy))
+                elif efecto == 'slide_down':
+                    dy = int((1.0 - t) * (canvas_h // 2))
+                    frames.append(compose(base_img, dx=0, dy=dy))
+                elif efecto == 'zoom':
+                    # Zoom suave hacia adentro (1.0 -> 1.15)
+                    scale = 1.0 + 0.15 * t
+                    zw = max(1, int(w * scale))
+                    zh = max(1, int(h * scale))
+                    zimg = base_img.resize((zw, zh), Image.Resampling.LANCZOS)
+                    frames.append(compose(zimg))
+                elif efecto == 'zigzag':
+                    # Movimiento en zig-zag
+                    amplitude = 20
+                    dx = int((amplitude) * (1 if (i // 3) % 2 == 0 else -1))
+                    dy = int(amplitude * (0.5 - t))
+                    frames.append(compose(base_img, dx=dx, dy=dy))
+                else:
+                    frames.append(compose(base_img))
+            return frames
+        except Exception as e:
+            print(f"Error generando frames de efecto: {e}")
+            return []
+
+    def _animate_preview_frames(self):
+        """Bucle de animación para reproducir frames en el canvas de la vista previa"""
+        try:
+            if not self._anim_state or not self._anim_state.get('frames'):
+                return
+            frames = self._anim_state['frames']
+            idx = self._anim_state.get('index', 0)
+            img = frames[idx % len(frames)]
+            self._preview_image_tk = ImageTk.PhotoImage(img)
+            self.canvas_foto_preview.delete('all')
+            self.canvas_foto_preview.create_image(300, 225, image=self._preview_image_tk)
+            self._anim_state['index'] = (idx + 1) % len(frames)
+            # ~30 FPS
+            self._anim_after_id = self.root.after(33, self._animate_preview_frames)
+        except Exception as e:
+            print(f"Error en animación de preview: {e}")
+            self._stop_animation()
     
     def crear_pestana_caratula(self):
         """Crea la pestaña de carátula CON VISTA PREVIA"""
